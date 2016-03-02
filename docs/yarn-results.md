@@ -121,7 +121,7 @@
 | com.databricks.spark.avro        |      8000000 |         0 |     174.74 |    299.648 |     64.709 |     68.059 |     67.212 |
 | parquet                          |      8000000 |         0 |      47.12 |    216.999 |      5.129 |      8.296 |      8.257 |
 
-Legend:
+|Legend:||
 |Read 0 | SELECT COUNT(*) |
 |Read 1 | SELECT COUNT(*) FROM SELECT * FROM data_frame WHERE C41 = 'pod.' AND C7 = 1 AND C8 = 0 AND C31 < 100 AND C35 > 0.1 AND C35 < 0.5 |
 |Read 2 | SELECT COUNT(*) FROM SELECT "C1", "C2", "C3", "C7", "C8", "C31", "C35", "C41" FROM data_frame WHERE C41 = 'pod.' AND C7 = 1 AND C8 = 0 AND C31 < 100 AND C35 > 0.1 AND C35 < 0.5 |
