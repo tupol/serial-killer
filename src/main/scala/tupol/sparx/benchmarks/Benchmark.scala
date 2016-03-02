@@ -5,6 +5,8 @@ import org.apache.hadoop.fs.{ FileSystem, Path }
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 
+import scala.io.Source
+
 /**
  * Test Bulk Reads and Writes
  */
@@ -13,7 +15,7 @@ object Benchmark extends SparkRunnable {
   val appName = "serial-killer"
 
   val requiredParameters = Seq(
-    "input.file",
+    //    "input.file",
     "path.tmp",
     "start.size",
     "runs.per.step",
@@ -24,7 +26,7 @@ object Benchmark extends SparkRunnable {
   def runJob(sc: SparkContext, config: Config) = {
 
     // Retrieve simple configuration parameters
-    val inputFile = config.getString("input.file")
+    //    val inputFile = config.getString("input.file")
     val tempDir = config.getString("path.tmp")
     val resultsFile = config.getString("results.file")
     val startSize = config.getInt("start.size")
@@ -33,6 +35,10 @@ object Benchmark extends SparkRunnable {
     val incrementSteps = config.getInt("increment.steps")
     val collectAverages = config.getBoolean("collect.averages")
 
+    /**
+     * Serializer to be tested in form of a map containing the serializer name/code as needed by the
+     * DataFrame Reader and Writer as keys and additional options map as values.
+     */
     val serializerDescriptions = Map(
       "com.databricks.spark.csv" ->
         Map[String, String]("header" -> "true"),
@@ -47,12 +53,7 @@ object Benchmark extends SparkRunnable {
     val sqlContext = new SQLContext(sc)
 
     // Create a data frame that will be the base (seed) for all the further generated data frames
-    val seedData = sqlContext.read
-      .format("com.databricks.spark.csv")
-      .option("header", "false") // Use first line of all files as header
-      .option("inferSchema", "true") // Automatically infer data types
-      .load(inputFile)
-      .scale(startSize)
+    val seedData = createSeedData(sqlContext, tempDir, startSize)
 
     /**
      * Test the read and write times and run the benchmark 'runs' times.
@@ -135,19 +136,20 @@ object Benchmark extends SparkRunnable {
   }
 
   /**
-    * Convenience data type for readers and writers
-     */
+   * Convenience data type for readers and writers
+   */
   type DataRW = (DataFrameReader, DataFrameWriter)
 
   /**
-    * Convenience benchmark results bean
-    * @param runNo if the test was ran multiple times show the run attempt number
-    * @param format serialization format (e.g. csv, avro, parquet...)
-    * @param operation (insert, select, what sort of select...)
-    * @param records how many records were used for benchmarking (key data)
-    * @param timeMs how long did the operation take (key data)
-    * @param fileSize how large was the file on disk (regardless of the hadoop block size)
-    */
+   * Convenience benchmark results bean
+   *
+   * @param runNo if the test was ran multiple times show the run attempt number
+   * @param format serialization format (e.g. csv, avro, parquet...)
+   * @param operation (insert, select, what sort of select...)
+   * @param records how many records were used for benchmarking (key data)
+   * @param timeMs how long did the operation take (key data)
+   * @param fileSize how large was the file on disk (regardless of the hadoop block size)
+   */
   case class BenchmarkResult(runNo: Int, format: String, operation: String, records: Long, timeMs: Long, fileSize: Long)
 
   /**
@@ -253,6 +255,24 @@ object Benchmark extends SparkRunnable {
 
     (size, writeTime, readTime0, readTime1, readTime2)
 
+  }
+
+  def createSeedData(sqlContext: SQLContext, tempDir: String, startSize: Int) = {
+
+    // A bit of ugly gymnastics here to get the typed data out of the file... I know...
+    val dataLines = Source.fromInputStream(Benchmark.getClass.getResourceAsStream("/kddcup.data_01_percent"))
+      .getLines.toSeq
+
+    val file = s"tempDir/benchmark_input.tmp"
+
+    sqlContext.sparkContext.parallelize(dataLines).saveAsTextFile(file)
+
+    sqlContext.read
+      .format("com.databricks.spark.csv")
+      .option("header", "false") // Use first line of all files as header
+      .option("inferSchema", "true") // Automatically infer data types
+      .load(file)
+      .scale(startSize)
   }
 
 }

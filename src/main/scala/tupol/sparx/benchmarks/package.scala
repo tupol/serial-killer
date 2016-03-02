@@ -13,20 +13,19 @@ import scala.util.Try
  */
 package object benchmarks {
 
-
   /**
-    * DataFrame decorator adding utility functions for benchmarking.
-    *
-    * @param data
-    */
+   * DataFrame decorator adding utility functions for benchmarking.
+   *
+   * @param data
+   */
   implicit class TestDataFrame(val data: DataFrame) {
 
     /**
-      * Reduces or increases the size of a data frame with the given ratio.
-      *
-      * @param ratio
-      * @return
-      */
+     * Reduces or increases the size of a data frame with the given ratio.
+     *
+     * @param ratio
+     * @return
+     */
     def scale(ratio: Double): DataFrame = {
 
       require(ratio > 0)
@@ -43,11 +42,11 @@ package object benchmarks {
     }
 
     /**
-      * Reduces or increases the size of a data frame to the given number of rows.
-      *
-      * @param records
-      * @return
-      */
+     * Reduces or increases the size of a data frame to the given number of rows.
+     *
+     * @param records
+     * @return
+     */
     def scale(records: Int): DataFrame = {
       require(records > 0)
       require(data.count > 0)
