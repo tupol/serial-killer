@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# What do I do?
+###############
+
+# Run the entire project, from data import, model generation and prediction generation.
+
+# CONFIGURATION SECTION
+#######################
+
+# Set the global configuration
+
+# The location of the fat-jar for the application (run `sbt assembly` to create it)
+export JAR_FILE="/tmp/serial-killer-fat.jar"
+# The location of the fat-jar for the application (run `sbt assembly` to create it)
+export MAIN_CLASS="tupol.sparx.benchmarks.Benchmark"
+
+export SPARK_MASTER_URL=yarn-cluster
+
+export YARN_EXECUTORS=3
+#
+export SPARK_DRIVER_MEMORY=5g
+#
+export SPARK_EXECUTOR_MEMORY=3g
+
+# Where are all the necessary files? This path should be accessible by all spark nodes
+# !!! Make sure all nodes have access to it
+export ROOT_DIR="hdfs:///tmp/"
+# Training data input json file
+export APP_INPUT_FILE="$ROOT_DIR/demo-v2/kdd/kddcup.data_01_percent"
+# The temporary HDFS directory were the data will be persisted as avro/parquet/csv...
+# The data is cleaned after each step so it should not overflow
+export APP_PATH_TMP="$ROOT_DIR"
+# THe path to the CSV file used to store the results
+export APP_RESULTS_FILE="$ROOT_DIR/serial-killer-results.md"
+# How many entries from sample file should be used for benchmarking?
+# If the specified size is larger than the number of records in the sample file the data will be padded to match the given number.
+export APP_START_SIZE=200000
+# How fast should the data increase (1 means that the test data will increase with the same amount at each step)
+export APP_INCREMENT_SIZE=200000
+# How many steps should we take to provide good results
+export APP_INCREMENT_STEPS=10
+# How many times should we run the benchmark for each step (useful to get some averages)
+export APP_RUNS_PER_STEP=3
+# Do we want the reasults of each individual run per step or the averages of the 'runs.per.step'?
+export APP_COLLECT_AVERAGES=true
+
+
+# RUN SECTION
+#############
+
+spark-submit \
+  --class $MAIN_CLASS \
+  --name "Serial-Killer" \
+  --master $SPARK_MASTER_URL \
+  --num-executors $YARN_EXECUTORS \
+  --conf spark.task.maxFailures=20 \
+  --conf spark.driver.memory=$SPARK_DRIVER_MEMORY \
+  --conf spark.executor.memory=$SPARK_EXECUTOR_MEMORY \
+  --verbose \
+  $JAR_FILE \
+  serial-killer.input.file=\"$APP_INPUT_FILE\" \
+  serial-killer.path.tmp=\"$APP_PATH_TMP\" \
+  serial-killer.results.file=\"$APP_RESULTS_FILE\" \
+  serial-killer.start.size=$APP_START_SIZE \
+  serial-killer.increment.size=$APP_INCREMENT_SIZE \
+  serial-killer.increment.steps=$APP_INCREMENT_STEPS \
+  serial-killer.runs.per.step=$APP_RUNS_PER_STEP \
+  serial-killer.collect.averages=$APP_COLLECT_AVERAGES
