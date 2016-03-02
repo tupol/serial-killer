@@ -71,3 +71,13 @@ All the data points to the fact that Parquet is yielding the smallest file size 
 
 **Note**: The Avro and CSV read spikes around 7400000 records is not accounted for.
 
+## External references
+
+[Choosing an HDFS data storage format- Avro vs. Parquet and more - StampedeCon 2015](http://www.slideshare.net/StampedeCon/choosing-an-hdfs-data-storage-format-avro-vs-parquet-and-more-stampedecon-2015); corresponding code available [here](https://github.com/silicon-valley-data-science/stampedecon-2015).
+
+## TODOs
+- [ ] Refactor the HDFS Benchmark (code beautification)
+- [ ] Add synthetic data generator for arbitrary sizes (both rows and columns)
+- [ ] Add synthetic data generator for arbitrary data types (strings, numbers, booleans, structures...)
+- [ ] Extract the tested query as an external parameter
+- [ ] Improve the report details
